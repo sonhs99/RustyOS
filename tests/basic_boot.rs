@@ -27,5 +27,5 @@ fn trivial_assertion() {
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
     RustyOS::test_panic_handler(info);
-    loop {}
+    // loop {}
 }

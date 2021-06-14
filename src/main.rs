@@ -6,16 +6,19 @@
 
 use RustyOS::{println, print};
 use core::panic::PanicInfo;
+use bootloader::{BootInfo, entry_point};
+
+entry_point!(kernel_main);
 
 #[no_mangle]
-pub extern "C" fn _start() -> ! {
+fn kernel_main(boot_info: &'static BootInfo) -> ! {
     println!("Hello, World!{}", "!");
 
     RustyOS::init();
 
     let ptr = 0x2031b2 as *mut u32;
     unsafe { let x = *ptr; }
-    println!("읽기 성공");
+    println!("Reading Success");
 
     #[cfg(test)]
     test_main();
