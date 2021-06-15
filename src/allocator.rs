@@ -1,5 +1,5 @@
 use alloc::alloc::{GlobalAlloc, Layout};
-use core::{mem::ManuallyDrop, ptr::null_mut};
+use core::{ptr::null_mut};
 
 use x86_64::{
     structures::paging::{
@@ -7,10 +7,29 @@ use x86_64::{
     },
     VirtAddr,
 };
-use linked_list_allocator::LockedHeap;
+use linked_list::LinkedListAllocator;
+
+pub mod bump;
+pub mod linked_list;
 
 pub const HEAP_START: usize = 0x_4444_4444_0000;
 pub const HEAP_SIZE: usize = 100 * 1024;
+
+pub struct Locked<A> {
+    inner: spin::Mutex<A>,
+}
+
+impl<A> Locked<A> {
+    pub const fn new(inner: A) -> Self {
+        Locked {
+            inner: spin::Mutex::new(inner),
+        }
+    }
+
+    pub fn lock(&self) -> spin::MutexGuard<A> {
+        self.inner.lock()
+    }
+}
 
 pub fn init_heap(
     mapper: &mut impl Mapper<Size4KiB>,
@@ -52,5 +71,9 @@ unsafe impl GlobalAlloc for Dummy {
     }
 }
 
+fn align_up(addr: usize, align: usize) -> usize {
+    (addr + align - 1)  & !(align - 1)
+}
+
 #[global_allocator]
-static ALLOCATOR: LockedHeap = LockedHeap::empty();
+static ALLOCATOR: Locked<LinkedListAllocator> = Locked::new(LinkedListAllocator::new());
