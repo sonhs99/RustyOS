@@ -1,3 +1,4 @@
+#![allow(non_snake_case)]
 #![no_std]
 #![no_main]
 #![feature(custom_test_frameworks)]
@@ -6,7 +7,7 @@
 
 extern crate alloc;
 
-use RustyOS::{println, print};
+use RustyOS::{println};
 use core::panic::PanicInfo;
 use alloc::{boxed::Box, vec, vec::Vec, rc::Rc};
 use bootloader::{BootInfo, entry_point};

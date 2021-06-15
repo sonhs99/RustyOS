@@ -1,6 +1,3 @@
-use alloc::alloc::{GlobalAlloc, Layout};
-use core::{ptr::null_mut};
-
 use x86_64::{
     structures::paging::{
         mapper::MapToError, FrameAllocator, Mapper, Page, PageTableFlags, Size4KiB,
@@ -11,6 +8,7 @@ use linked_list::LinkedListAllocator;
 
 pub mod bump;
 pub mod linked_list;
+pub mod dummy;
 
 pub const HEAP_START: usize = 0x_4444_4444_0000;
 pub const HEAP_SIZE: usize = 100 * 1024;
@@ -57,18 +55,6 @@ pub fn init_heap(
     }
 
     Ok(())
-}
-
-pub struct Dummy;
-
-unsafe impl GlobalAlloc for Dummy {
-    unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
-        null_mut()
-    }
-    
-    unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout) {
-        panic!("dealloc should be never called");
-    }
 }
 
 fn align_up(addr: usize, align: usize) -> usize {
