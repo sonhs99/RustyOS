@@ -7,21 +7,20 @@
 
 extern crate alloc;
 
-use RustyOS::{println,
-    task::{
-        Task, simple_executor::SimpleExecutor
-    }
-};
+use RustyOS::{print, println, task::{Task, keyboard, executor::Executor}};
 use core::panic::PanicInfo;
 use bootloader::{BootInfo, entry_point};
 
 async fn async_number() -> u32 {
-    42
+    1
 }
 
 async fn example_task() {
-    let number = async_number().await;
-    println!("async number : {}", number);
+    loop {
+        let number = async_number().await;
+        print!("{}", number);
+        for _ in 1..100000 {}
+    }
 }
 
 entry_point!(kernel_main);
@@ -43,11 +42,13 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
     allocator::init_heap(&mut mapper, &mut frame_allocator)
         .expect("heap initialization failed");
 
-    let mut executor = SimpleExecutor::new();
-    executor.spawn(Task::new(example_task()));
-    executor.run();
     #[cfg(test)]
     test_main();
+
+    let mut executor = Executor::new();
+    executor.spawn(Task::new(keyboard::print_keypresses()));
+    executor.spawn(Task::new(example_task()));
+    executor.run();
 
     println!("It did not crash!");
     RustyOS::hlt_loop();
