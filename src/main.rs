@@ -12,6 +12,7 @@ use core::panic::PanicInfo;
 use bootloader::{BootInfo, entry_point};
 
 async fn async_number() -> u32 {
+    for _ in 1..100000 {}
     1
 }
 
@@ -19,7 +20,6 @@ async fn example_task() {
     loop {
         let number = async_number().await;
         print!("{}", number);
-        for _ in 1..100000 {}
     }
 }
 

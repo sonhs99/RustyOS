@@ -1,4 +1,4 @@
-use crate::{gdt, println};
+use crate::{gdt, println, task::executor::Executor};
 use x86_64::structures::idt::{InterruptDescriptorTable, InterruptStackFrame, PageFaultErrorCode};
 use lazy_static::lazy_static;
 
