@@ -1,13 +1,13 @@
 #![no_std]
 #![no_main]
 #![feature(custom_test_frameworks)]
-#![test_runner(crate::test_runner)]
+#![test_runner(RustyOS::test_runner)]
 #![reexport_test_harness_main = "test_main"]
 
-mod vga;
-
 use core::panic::PanicInfo;
+use RustyOS::println;
 
+#[cfg(not(test))]
 #[panic_handler]
 fn panic(_info: &PanicInfo) -> ! {
     println!("{}", _info);
@@ -15,26 +15,27 @@ fn panic(_info: &PanicInfo) -> ! {
 }
 
 #[cfg(test)]
-fn test_runner(tests: &[&dyn Fn()]) {
-    println!("Running {} tests", tests.len());
-    for test in tests {
-        test();
-    }
+#[panic_handler]
+fn panic(_info: &PanicInfo) -> ! {
+    RustyOS::test_panic_handler(_info);
 }
 
 #[no_mangle]
 pub extern "C" fn _start() -> ! {
     println!("Hello, World{}", '!');
 
+    RustyOS::gdt::init();
+    RustyOS::init();
+
     #[cfg(test)]
     test_main();
+
+    println!("It did not crash!");
 
     loop {}
 }
 
 #[test_case]
 fn trivial_assertion() {
-    print!("trivial_assertion... ");
     assert_eq!(1, 1);
-    println!("[OK]");
 }
