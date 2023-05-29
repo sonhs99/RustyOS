@@ -1,4 +1,7 @@
+pub mod bump;
+
 use alloc::alloc::{GlobalAlloc, Layout};
+use bump::BumpAllocator;
 use core::ptr::null_mut;
 use x86_64::{
     structures::paging::{
@@ -6,6 +9,9 @@ use x86_64::{
     },
     VirtAddr,
 };
+
+#[global_allocator]
+static ALLOCATOR: Locked<BumpAllocator> = Locked::new(BumpAllocator::new());
 
 pub const HEAP_START: usize = 0x_4444_4444_0000;
 pub const HEAP_SIZE: usize = 100 * 1024;
@@ -29,6 +35,8 @@ pub fn init_heap(
         let flags = PageTableFlags::PRESENT | PageTableFlags::WRITABLE;
         unsafe { mapper.map_to(page, frame, flags, frame_allocator)?.flush() };
     }
+
+    unsafe { ALLOCATOR.lock().init(HEAP_START, HEAP_SIZE) };
     Ok(())
 }
 
@@ -44,5 +52,22 @@ unsafe impl GlobalAlloc for Dummy {
     }
 }
 
-#[global_allocator]
-static ALLOCATOR: Dummy = Dummy;
+pub struct Locked<A> {
+    inner: spin::Mutex<A>,
+}
+
+impl<A> Locked<A> {
+    pub const fn new(inner: A) -> Self {
+        Locked {
+            inner: spin::Mutex::new(inner),
+        }
+    }
+
+    pub fn lock(&self) -> spin::MutexGuard<A> {
+        self.inner.lock()
+    }
+}
+
+fn align_up(addr: usize, align: usize) -> usize {
+    (addr + align - 1) & !(align - 1)
+}

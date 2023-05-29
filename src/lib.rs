@@ -1,5 +1,6 @@
 #![no_std]
 #![cfg_attr(test, no_main)]
+// #![cfg(no_global_oom_handling)]
 #![feature(custom_test_frameworks)]
 #![feature(abi_x86_interrupt)]
 #![test_runner(crate::test_runner)]

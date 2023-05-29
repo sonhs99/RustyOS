@@ -41,7 +41,8 @@ pub fn kernel_main(boot_info: &'static BootInfo) -> ! {
         unsafe { memory::BootInfoFrameAllocator::init(&boot_info.memory_map) };
 
     allocator::init_heap(&mut mapper, &mut frame_allocator).expect("heap initialization failed");
-    let x = Box::new(41);
+    let x = Box::new(0);
+    println!("heap value is {:p}", x);
 
     #[cfg(test)]
     test_main();
