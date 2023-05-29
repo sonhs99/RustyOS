@@ -4,9 +4,11 @@
 #![test_runner(RustyOS::test_runner)]
 #![reexport_test_harness_main = "test_main"]
 
+extern crate alloc;
+
+use alloc::boxed::Box;
 use bootloader::{entry_point, BootInfo};
 use core::panic::PanicInfo;
-use x86_64::{PhysAddr, VirtAddr};
 use RustyOS::println;
 
 #[cfg(not(test))]
@@ -26,19 +28,20 @@ entry_point!(kernel_main);
 
 #[no_mangle]
 pub fn kernel_main(boot_info: &'static BootInfo) -> ! {
-    use RustyOS::memory::activate_level_4_table;
+    use x86_64::{structures::paging::Page, VirtAddr};
+    use RustyOS::allocator;
+    use RustyOS::memory;
 
     println!("Hello, World{}", '!');
     RustyOS::init();
 
     let phys_mem_offset = VirtAddr::new(boot_info.physical_memory_offset);
-    let l4_table = unsafe { activate_level_4_table(phys_mem_offset) };
+    let mut mapper = unsafe { memory::init(phys_mem_offset) };
+    let mut frame_allocator =
+        unsafe { memory::BootInfoFrameAllocator::init(&boot_info.memory_map) };
 
-    for (i, entry) in l4_table.iter().enumerate() {
-        if !entry.is_unused() {
-            println!("L4 Entry {}: {:?}", i, entry);
-        }
-    }
+    allocator::init_heap(&mut mapper, &mut frame_allocator).expect("heap initialization failed");
+    let x = Box::new(41);
 
     #[cfg(test)]
     test_main();
