@@ -1,6 +1,6 @@
 #![no_std]
 #![cfg_attr(test, no_main)]
-// #![cfg(no_global_oom_handling)]
+#![feature(const_mut_refs)]
 #![feature(custom_test_frameworks)]
 #![feature(abi_x86_interrupt)]
 #![test_runner(crate::test_runner)]
@@ -13,6 +13,7 @@ pub mod gdt;
 pub mod interrupts;
 pub mod memory;
 pub mod serial;
+pub mod task;
 pub mod vga;
 
 #[cfg(test)]

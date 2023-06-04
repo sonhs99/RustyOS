@@ -6,10 +6,9 @@
 
 extern crate alloc;
 
-use alloc::boxed::Box;
 use bootloader::{entry_point, BootInfo};
 use core::panic::PanicInfo;
-use RustyOS::println;
+use RustyOS::{println, task::keyboard};
 
 #[cfg(not(test))]
 #[panic_handler]
@@ -26,11 +25,21 @@ fn panic(_info: &PanicInfo) -> ! {
 
 entry_point!(kernel_main);
 
+async fn async_number() -> u32 {
+    42
+}
+
+async fn example_task() {
+    let number = async_number().await;
+    println!("async number: {}", number);
+}
+
 #[no_mangle]
 pub fn kernel_main(boot_info: &'static BootInfo) -> ! {
-    use x86_64::{structures::paging::Page, VirtAddr};
+    use x86_64::VirtAddr;
     use RustyOS::allocator;
     use RustyOS::memory;
+    use RustyOS::task::{executor::Executor, Task};
 
     println!("Hello, World{}", '!');
     RustyOS::init();
@@ -41,8 +50,11 @@ pub fn kernel_main(boot_info: &'static BootInfo) -> ! {
         unsafe { memory::BootInfoFrameAllocator::init(&boot_info.memory_map) };
 
     allocator::init_heap(&mut mapper, &mut frame_allocator).expect("heap initialization failed");
-    let x = Box::new(0);
-    println!("heap value is {:p}", x);
+
+    let mut executor = Executor::new();
+    executor.spawn(Task::new(example_task()));
+    executor.spawn(Task::new(keyboard::print_keypresses()));
+    executor.run();
 
     #[cfg(test)]
     test_main();
