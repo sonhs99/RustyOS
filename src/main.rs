@@ -7,8 +7,9 @@
 extern crate alloc;
 
 use bootloader::{entry_point, BootInfo};
-use core::panic::PanicInfo;
-use RustyOS::{println, task::keyboard};
+use core::{mem::size_of, panic::PanicInfo};
+use lazy_static::lazy_static;
+use RustyOS::{println, scheduler::TCB, task::keyboard};
 
 #[cfg(not(test))]
 #[panic_handler]
@@ -25,13 +26,67 @@ fn panic(_info: &PanicInfo) -> ! {
 
 entry_point!(kernel_main);
 
-async fn async_number() -> u32 {
-    42
+async fn example_task1() {
+    // loop {
+    //     println!("This is 'example_task1'");
+    //     for _ in 0..100000 {}
+    // }
+    println!("This is 'example_task1'");
 }
 
-async fn example_task() {
-    let number = async_number().await;
-    println!("async number: {}", number);
+async fn example_task2() {
+    loop {
+        println!("This is 'example_task2'");
+        for _ in 0..100000 {}
+    }
+}
+
+lazy_static! {
+    static ref tasks: spin::Mutex<[TCB; 2]> = spin::Mutex::new([TCB::new(), TCB::new()]);
+}
+
+static stack: [u64; 1024] = [0; 1024];
+
+fn example_thread() {
+    let mut idx: i32 = 0;
+    loop {
+        let mut task_guard = tasks.lock();
+        println!(
+            "[{}] This message is from example_thread. Press any key to switch",
+            idx
+        );
+        idx += 1;
+        unsafe {
+            task_guard[1].context.save();
+            task_guard[0].context.load();
+        }
+    }
+}
+
+fn create_task() {
+    let mut idx: i32 = {
+        let mut task_guard = tasks.lock();
+        task_guard[1].init(
+            0,
+            01,
+            example_thread as u64,
+            &stack as *const [u64; 1024] as u64,
+            8 * 1024,
+        );
+        0
+    };
+    loop {
+        let mut task_guard = tasks.lock();
+        println!(
+            "[{}] This message is from main_thread. Press any key to switch",
+            idx
+        );
+        idx += 1;
+        unsafe {
+            task_guard[0].context.save();
+            task_guard[1].context.load();
+        }
+    }
 }
 
 #[no_mangle]
@@ -51,10 +106,13 @@ pub fn kernel_main(boot_info: &'static BootInfo) -> ! {
 
     allocator::init_heap(&mut mapper, &mut frame_allocator).expect("heap initialization failed");
 
-    let mut executor = Executor::new();
-    executor.spawn(Task::new(example_task()));
-    executor.spawn(Task::new(keyboard::print_keypresses()));
-    executor.run();
+    create_task();
+
+    // let mut executor = Executor::new();
+    // executor.spawn(Task::new(example_task1()));
+    // executor.spawn(Task::new(example_task2()));
+    // executor.spawn(Task::new(keyboard::print_keypresses()));
+    // executor.run();
 
     #[cfg(test)]
     test_main();

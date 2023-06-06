@@ -9,7 +9,6 @@ extern crate alloc;
 use alloc::{boxed::Box, vec::Vec};
 use bootloader::{entry_point, BootInfo};
 use core::panic::PanicInfo;
-use RustyOS::allocator::HEAP_SIZE;
 
 entry_point!(main);
 

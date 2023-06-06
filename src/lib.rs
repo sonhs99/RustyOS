@@ -15,6 +15,7 @@ pub mod memory;
 pub mod serial;
 pub mod task;
 pub mod vga;
+pub mod scheduler;
 
 #[cfg(test)]
 use bootloader::{entry_point, BootInfo};

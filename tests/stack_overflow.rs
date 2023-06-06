@@ -21,7 +21,7 @@ lazy_static! {
 }
 
 extern "x86-interrupt" fn test_double_fault_handler(
-    stackframe: InterruptStackFrame,
+    _stackframe: InterruptStackFrame,
     _error_code: u64,
 ) -> ! {
     serial_println!("[Ok]");

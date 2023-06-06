@@ -11,7 +11,7 @@ pub extern "C" fn _start() -> ! {
 }
 
 #[panic_handler]
-fn panic(info: &PanicInfo) -> ! {
+fn panic(_info: &PanicInfo) -> ! {
     serial_println!("[OK]");
     exit_qemu(QEMUExitCode::Success);
     loop {}
